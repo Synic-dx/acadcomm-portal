@@ -67,7 +67,7 @@ export async function getUpcomingExams(
     .filter((e) => {
       const d = new Date(e.date)
       d.setHours(0, 0, 0, 0)
-      return d >= today && e.sections.includes(section)
+      return d >= today && e.sections.includes(_section)
     })
     .sort((a, b) => {
       const diff = new Date(a.date).getTime() - new Date(b.date).getTime()

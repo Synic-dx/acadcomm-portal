@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveTimetable } from '@/lib/timetable-db'
+import type { DaySchedule } from '@/data/timetable'
 
 function guessType(subject: string): string {
   const s = subject.toLowerCase()
