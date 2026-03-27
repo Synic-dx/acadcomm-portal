@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist } from "next/font/google"
 import "./globals.css"
+import { InstallPrompt } from "@/components/install-prompt"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -26,7 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#18181b" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className="h-full bg-white text-zinc-900 antialiased">{children}</body>
+      <body className="h-full bg-white text-zinc-900 antialiased">
+        {children}
+        <InstallPrompt />
+      </body>
     </html>
   )
 }
