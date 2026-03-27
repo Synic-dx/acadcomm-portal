@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, section')
+    .select('full_name, section, role, roll_number, workshop_pts, workshop_pa')
     .eq('id', user.id)
     .single()
 
@@ -18,6 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     email: user.email ?? '',
     full_name: profile?.full_name ?? undefined,
     section: profile?.section ?? undefined,
+    role: profile?.role ?? undefined,
   }
 
   return (

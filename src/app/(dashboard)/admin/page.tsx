@@ -1,0 +1,114 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { TimetableUploader } from './timetable-uploader'
+import { UserManager } from './user-manager'
+import { UserImporter } from './user-importer'
+import { ExamManager } from './exam-manager'
+import type { Exam } from './exam-manager'
+
+export default async function AdminPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin') redirect('/dashboard')
+
+  const [uploadsRes, usersRes, examsRes] = await Promise.all([
+    supabase
+      .from('timetable_uploads')
+      .select('id, filename, uploaded_at, is_active, timetable')
+      .order('uploaded_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('profiles')
+      .select('id, email, full_name, section, roll_number, role')
+      .order('email'),
+    supabase
+      .from('exams')
+      .select('*')
+      .order('date', { ascending: true })
+      .order('start', { ascending: true }),
+  ])
+
+  const uploads = uploadsRes.data
+  const users   = usersRes.data ?? []
+  const exams   = (examsRes.data ?? []) as Exam[]
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto space-y-10">
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">Admin Panel</h1>
+        <p className="text-sm text-zinc-500 mt-0.5">Manage timetable, exams, and user profiles.</p>
+      </div>
+
+      {/* ── Timetable ── */}
+      <div className="max-w-2xl space-y-6">
+        <TimetableUploader />
+
+        {uploads && uploads.length > 0 && (
+          <section>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">
+              Upload History
+            </h2>
+            <div className="rounded-lg border border-zinc-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-zinc-50 text-zinc-500 text-xs uppercase tracking-wide">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left font-medium">File</th>
+                    <th className="px-4 py-2.5 text-left font-medium">Days</th>
+                    <th className="px-4 py-2.5 text-left font-medium">Uploaded</th>
+                    <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {uploads.map((u) => (
+                    <tr key={u.id} className="bg-white">
+                      <td className="px-4 py-3 text-zinc-900 font-medium">{u.filename}</td>
+                      <td className="px-4 py-3 text-zinc-500">
+                        {Array.isArray(u.timetable) ? u.timetable.length : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-500">
+                        {new Date(u.uploaded_at).toLocaleString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.is_active ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500">Inactive</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div className="border-t border-zinc-100" />
+
+      {/* ── Exam Dates ── */}
+      <ExamManager initialExams={exams} />
+
+      <div className="border-t border-zinc-100" />
+
+      {/* ── Import Users ── */}
+      <UserImporter />
+
+      <div className="border-t border-zinc-100" />
+
+      {/* ── User Management ── */}
+      <UserManager users={users} />
+    </div>
+  )
+}

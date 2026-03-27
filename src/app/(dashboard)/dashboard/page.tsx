@@ -1,25 +1,31 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getUpcomingExams, getDaySchedule, formatDate, toDateStr } from '@/data/timetable'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CalendarDays, Clock, BookOpen } from 'lucide-react'
+import { formatDate, toDateStr } from '@/data/timetable'
+import { getActiveTimetable, getDayScheduleFromData, getUpcomingExams } from '@/lib/timetable-db'
+import { Card, CardContent } from '@/components/ui/card'
+import { Clock } from 'lucide-react'
+
+import { ScheduleCard } from '@/components/schedule-card'
+import type { AttendanceMap } from '@/components/schedule-card'
 
 const examTypeBadge: Record<string, string> = {
   quiz: 'bg-amber-100 text-amber-700',
   midterm: 'bg-blue-100 text-blue-700',
   endterm: 'bg-red-100 text-red-700',
+  assignment: 'bg-purple-100 text-purple-700',
+  viva: 'bg-orange-100 text-orange-700',
+  other: 'bg-zinc-100 text-zinc-600',
 }
 
-const sessionTypeDot: Record<string, string> = {
-  lecture: 'bg-zinc-900',
-  quiz: 'bg-amber-500',
+const examTypeDot: Record<string, string> = {
+  quiz: 'bg-amber-400',
   midterm: 'bg-blue-500',
   endterm: 'bg-red-500',
-  activity: 'bg-emerald-500',
-  event: 'bg-purple-500',
-  tutorial: 'bg-sky-500',
+  assignment: 'bg-purple-500',
+  viva: 'bg-orange-400',
+  other: 'bg-zinc-400',
 }
+
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -42,13 +48,38 @@ export default async function DashboardPage() {
   const todayStr = toDateStr(today)
   const tomorrowStr = toDateStr(tomorrow)
 
-  const upcomingExams = getUpcomingExams(section, 5)
-  const todayClasses = getDaySchedule(todayStr, section).filter(
+  const activeTimetable = await getActiveTimetable()
+  const upcomingExams = await getUpcomingExams(section, 10)
+  const todayClasses = getDayScheduleFromData(activeTimetable, todayStr, section).filter(
     (s) => s.type !== 'activity'
   )
-  const tomorrowClasses = getDaySchedule(tomorrowStr, section).filter(
+  const tomorrowClasses = getDayScheduleFromData(activeTimetable, tomorrowStr, section).filter(
     (s) => s.type !== 'activity'
   )
+
+  // Fetch attendance for today + tomorrow
+  const { data: attendanceRows } = await supabase
+    .from('attendance')
+    .select('date, subject, start, status')
+    .eq('user_id', user.id)
+    .in('date', [todayStr, tomorrowStr])
+
+  const attendanceMap: AttendanceMap = {}
+  for (const r of attendanceRows ?? []) {
+    attendanceMap[`${r.date}|${r.subject}|${r.start}`] = r.status as 'present' | 'absent'
+  }
+
+  // Fetch total absence counts per subject (all time)
+  const { data: absenceRows } = await supabase
+    .from('attendance')
+    .select('subject')
+    .eq('user_id', user.id)
+    .eq('status', 'absent')
+
+  const absenceCounts: Record<string, number> = {}
+  for (const r of absenceRows ?? []) {
+    absenceCounts[r.subject] = (absenceCounts[r.subject] ?? 0) + 1
+  }
 
   const isSunday = (d: Date) => d.getDay() === 0
 
@@ -66,45 +97,67 @@ export default async function DashboardPage() {
 
       {/* Exam timeline */}
       <section>
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4">
           Upcoming Evaluations
         </h2>
         {upcomingExams.length === 0 ? (
           <Card className="border-zinc-100 shadow-none">
             <CardContent className="py-8 text-center text-sm text-zinc-400">
-              No upcoming exams found. Enjoy the break!
+              No upcoming exams. Enjoy the break!
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {upcomingExams.map((exam, i) => {
-              const daysLeft = Math.ceil(
-                (new Date(exam.date + 'T00:00:00').getTime() - today.setHours(0, 0, 0, 0)) /
-                  (1000 * 60 * 60 * 24)
-              )
-              return (
-                <Card key={i} className="border-zinc-100 shadow-none hover:shadow-sm transition-shadow">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${examTypeBadge[exam.type] ?? 'bg-zinc-100 text-zinc-600'}`}
-                      >
-                        {exam.type}
-                      </span>
-                      <span className="text-xs text-zinc-400 whitespace-nowrap">
-                        {daysLeft === 0 ? 'Today' : daysLeft === 1 ? 'Tomorrow' : `in ${daysLeft}d`}
-                      </span>
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="absolute left-[5.5rem] top-0 bottom-0 w-px bg-zinc-100" />
+            <div className="space-y-0">
+              {upcomingExams.map((exam, i) => {
+                const examDate = new Date(exam.date + 'T00:00:00')
+                const todayMid = new Date(today)
+                todayMid.setHours(0, 0, 0, 0)
+                const daysLeft = Math.ceil((examDate.getTime() - todayMid.getTime()) / (1000 * 60 * 60 * 24))
+                const isToday = daysLeft === 0
+                const isTomorrow = daysLeft === 1
+                const dotColor = examTypeDot[exam.type] ?? 'bg-zinc-400'
+                return (
+                  <div key={i} className="relative flex items-start gap-4 pb-6 last:pb-0">
+                    {/* Date column */}
+                    <div className="w-20 shrink-0 pt-0.5 text-right">
+                      <p className="text-xs font-semibold text-zinc-900 leading-tight">
+                        {examDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                      <p className="text-[10px] text-zinc-400 leading-tight mt-0.5">
+                        {examDate.toLocaleDateString('en-IN', { weekday: 'short' })}
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-zinc-900 leading-snug">
-                      {exam.subject}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {formatDate(exam.date)} · {exam.start}–{exam.end}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
+
+                    {/* Dot on the line */}
+                    <div className="relative z-10 mt-1 shrink-0">
+                      <div className={`h-3 w-3 rounded-full ring-2 ring-white ${isToday ? 'ring-offset-1 ring-offset-zinc-900 ' + dotColor : dotColor}`} />
+                    </div>
+
+                    {/* Content */}
+                    <div className={`flex-1 rounded-lg border px-4 py-3 ${isToday ? 'border-zinc-200 bg-zinc-900 text-white' : 'border-zinc-100 bg-white'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`text-sm font-semibold leading-tight ${isToday ? 'text-white' : 'text-zinc-900'}`}>
+                          {exam.subject}
+                        </p>
+                        <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'bg-white/20 text-white' : (examTypeBadge[exam.type] ?? 'bg-zinc-100 text-zinc-600')}`}>
+                          {exam.type}
+                        </span>
+                      </div>
+                      <div className={`mt-1 flex items-center gap-2 text-xs ${isToday ? 'text-zinc-300' : 'text-zinc-400'}`}>
+                        <Clock size={10} />
+                        {exam.start}–{exam.end}
+                        {isToday && <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white">Today</span>}
+                        {isTomorrow && <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-500`}>Tomorrow</span>}
+                        {!isToday && !isTomorrow && <span className="ml-1 text-zinc-400">in {daysLeft}d</span>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </section>
@@ -114,14 +167,20 @@ export default async function DashboardPage() {
         <ScheduleCard
           title="Today"
           dateStr={todayStr}
+          formattedDate={formatDate(todayStr)}
           sessions={todayClasses}
           isSunday={isSunday(today)}
+          initialAttendance={attendanceMap}
+          absenceCounts={absenceCounts}
         />
         <ScheduleCard
           title="Tomorrow"
           dateStr={tomorrowStr}
+          formattedDate={formatDate(tomorrowStr)}
           sessions={tomorrowClasses}
           isSunday={isSunday(tomorrow)}
+          initialAttendance={attendanceMap}
+          absenceCounts={absenceCounts}
         />
       </div>
     </div>
@@ -135,60 +194,3 @@ function getGreeting() {
   return 'evening'
 }
 
-const sessionTypeDotClient: Record<string, string> = {
-  lecture: 'bg-zinc-900',
-  quiz: 'bg-amber-500',
-  midterm: 'bg-blue-500',
-  endterm: 'bg-red-500',
-  activity: 'bg-emerald-500',
-  event: 'bg-purple-500',
-  tutorial: 'bg-sky-500',
-}
-
-function ScheduleCard({
-  title,
-  dateStr,
-  sessions,
-  isSunday,
-}: {
-  title: string
-  dateStr: string
-  sessions: ReturnType<typeof getDaySchedule>
-  isSunday: boolean
-}) {
-  return (
-    <Card className="border-zinc-100 shadow-none">
-      <CardHeader className="pb-2 pt-4 px-4">
-        <CardTitle className="text-sm font-semibold text-zinc-700 flex items-center gap-1.5">
-          <CalendarDays size={14} className="text-zinc-400" />
-          {title}
-          <span className="font-normal text-zinc-400 text-xs ml-1">{formatDate(dateStr)}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4">
-        {isSunday ? (
-          <p className="text-sm text-zinc-400 py-2">Sunday — no classes</p>
-        ) : sessions.length === 0 ? (
-          <p className="text-sm text-zinc-400 py-2">No classes scheduled</p>
-        ) : (
-          <ul className="space-y-2">
-            {sessions.map((s, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span
-                  className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${sessionTypeDotClient[s.type] ?? 'bg-zinc-400'}`}
-                />
-                <div>
-                  <p className="text-sm font-medium text-zinc-900 leading-tight">{s.subject}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
-                    <Clock size={10} />
-                    {s.start}–{s.end}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  )
-}

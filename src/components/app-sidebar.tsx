@@ -12,6 +12,8 @@ import {
   ChevronDown,
   LogOut,
   User,
+  ShieldCheck,
+  Settings,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -48,9 +50,14 @@ const nav: NavItem[] = [
     href: '/important-links',
     icon: <Link2 size={16} />,
   },
+  {
+    label: 'Profile',
+    href: '/account',
+    icon: <User size={16} />,
+  },
 ]
 
-export function AppSidebar({ user }: { user: { email: string; full_name?: string; section?: string } }) {
+export function AppSidebar({ user }: { user: { email: string; full_name?: string; section?: string; role?: string } }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -81,6 +88,20 @@ export function AppSidebar({ user }: { user: { email: string; full_name?: string
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {user.role === 'admin' && (
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors',
+              pathname === '/admin'
+                ? 'bg-zinc-900 text-white font-medium'
+                : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
+            )}
+          >
+            <ShieldCheck size={16} />
+            Admin
+          </Link>
+        )}
         {nav.map((item) => {
           if (item.children) {
             const isActive = pathname.startsWith('/academics')
@@ -164,10 +185,7 @@ export function AppSidebar({ user }: { user: { email: string; full_name?: string
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2 text-sm">
-              <User size={14} /> Account
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={signOut} className="gap-2 text-sm text-red-500 focus:text-red-500">
+              <DropdownMenuItem onClick={signOut} className="gap-2 text-sm text-red-500 focus:text-red-500">
               <LogOut size={14} /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

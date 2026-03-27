@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_projects",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_logs",
+      "Bash(curl -sL \"https://docs.google.com/spreadsheets/d/1MJ1HaBVTSvqVV0PbzOpFy-gMr0IOq8XBcI5TL5H-tdA/export?format=csv&gid=0\")",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "mcp__supabase__get_publishable_keys",
+      "mcp__supabase__get_project",
+      "Bash(find /c/Users/shinj/OneDrive/Documents/Github/acadcomm-portal/src/app/api/admin/ -type f -name *.tsx -o -name *.ts)"
+    ]
+  }
+}
