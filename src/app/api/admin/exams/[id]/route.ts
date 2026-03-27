@@ -11,10 +11,11 @@ async function requireAdmin() {
 }
 
 // PATCH — update an exam (approve/reject/edit)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
+  const { id } = await params
   const body = await request.json()
   const { subject, type, date, start, end, sections, notes, status } = body
 
@@ -31,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const { data, error: dbErr } = await supabase!
     .from('exams')
     .update(updates)
-    .eq('id', params.id)
+    .eq('id', id)
     .select()
     .single()
 
@@ -40,11 +41,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE — remove an exam
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
-  const { error: dbErr } = await supabase!.from('exams').delete().eq('id', params.id)
+  const { id } = await params
+  const { error: dbErr } = await supabase!.from('exams').delete().eq('id', id)
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
   return new NextResponse(null, { status: 204 })
 }

@@ -158,7 +158,7 @@ export function ExamManager({ initialExams }: { initialExams: Exam[] }) {
     })
   }
 
-  async function setStatus(id: string, status: 'approved' | 'rejected') {
+  async function setStatus(id: string, status: 'approved' | 'rejected' | 'pending') {
     const res = await fetch(`/api/admin/exams/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
