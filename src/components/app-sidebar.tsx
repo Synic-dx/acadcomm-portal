@@ -179,27 +179,31 @@ export function AppSidebar({ user }: { user: UserProps }) {
         </button>
       </div>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <>
-          <div
-            className="lg:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="lg:hidden fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-100 bg-white shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-zinc-100 px-5">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">IPM · IIM Indore</p>
-                <p className="text-sm font-semibold text-zinc-900 leading-tight">AcadComm Portal</p>
-              </div>
-              <button onClick={() => setMobileOpen(false)} className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-50">
-                <X size={18} />
-              </button>
-            </div>
-            <NavContent user={user} onNavigate={() => setMobileOpen(false)} />
-          </aside>
-        </>
-      )}
+      {/* Mobile drawer backdrop */}
+      <div
+        onClick={() => setMobileOpen(false)}
+        className={`lg:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
+      {/* Mobile drawer — slides in from the right */}
+      <aside
+        className={`lg:hidden fixed inset-y-0 right-0 z-50 flex w-72 flex-col border-l border-zinc-100 bg-white shadow-xl transition-transform duration-300 ease-in-out ${
+          mobileOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex h-14 items-center justify-between border-b border-zinc-100 px-5">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">IPM · IIM Indore</p>
+            <p className="text-sm font-semibold text-zinc-900 leading-tight">AcadComm Portal</p>
+          </div>
+          <button onClick={() => setMobileOpen(false)} className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-50">
+            <X size={18} />
+          </button>
+        </div>
+        <NavContent user={user} onNavigate={() => setMobileOpen(false)} />
+      </aside>
     </>
   )
 }
