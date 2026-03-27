@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveTimetable } from '@/lib/timetable-db'
-import type { DaySchedule } from '@/data/timetable'
 
 function guessType(subject: string): string {
   const s = subject.toLowerCase()
@@ -33,27 +32,19 @@ export async function POST() {
   }>()
 
   for (const day of timetable) {
-    const sectionEntries: { section: 'A' | 'B'; sessions: DaySchedule['sectionA'] }[] = [
-      { section: 'A', sessions: day.sectionA },
-      { section: 'B', sessions: day.sectionB },
-    ]
-    for (const { section, sessions } of sectionEntries) {
-      for (const session of sessions) {
-        if (!isExamLike(session.subject)) continue
-        const key = `${day.date}|${session.subject}|${session.start}`
-        if (candidateMap.has(key)) {
-          const existing = candidateMap.get(key)!
-          if (!existing.sections.includes(section)) existing.sections.push(section)
-        } else {
-          candidateMap.set(key, {
-            subject: session.subject,
-            type: guessType(session.subject),
-            date: day.date,
-            start: session.start,
-            end: session.end,
-            sections: [section],
-          })
-        }
+    const allSessions = [...day.sectionA, ...day.sectionB]
+    for (const session of allSessions) {
+      if (!isExamLike(session.subject)) continue
+      const key = `${day.date}|${session.subject}|${session.start}`
+      if (!candidateMap.has(key)) {
+        candidateMap.set(key, {
+          subject: session.subject,
+          type: guessType(session.subject),
+          date: day.date,
+          start: session.start,
+          end: session.end,
+          sections: ['A', 'B'],
+        })
       }
     }
   }

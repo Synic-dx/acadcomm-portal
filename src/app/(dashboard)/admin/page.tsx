@@ -41,9 +41,9 @@ export default async function AdminPage() {
   const exams   = (examsRes.data ?? []) as Exam[]
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-10">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Admin Panel</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900">Admin Panel</h1>
         <p className="text-sm text-zinc-500 mt-0.5">Manage timetable, exams, and user profiles.</p>
       </div>
 
@@ -56,8 +56,8 @@ export default async function AdminPage() {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">
               Upload History
             </h2>
-            <div className="rounded-lg border border-zinc-100 overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-lg border border-zinc-100 overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
                 <thead className="bg-zinc-50 text-zinc-500 text-xs uppercase tracking-wide">
                   <tr>
                     <th className="px-4 py-2.5 text-left font-medium">File</th>

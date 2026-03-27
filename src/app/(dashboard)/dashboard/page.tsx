@@ -84,10 +84,10 @@ export default async function DashboardPage() {
   const isSunday = (d: Date) => d.getDay() === 0
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900">
           Good {getGreeting()}, {name}
         </h1>
         <p className="text-sm text-zinc-500 mt-0.5">
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="relative">
             {/* Vertical line */}
-            <div className="absolute left-[5.5rem] top-0 bottom-0 w-px bg-zinc-100" />
+            <div className="absolute left-16 sm:left-[5.5rem] top-0 bottom-0 w-px bg-zinc-100" />
             <div className="space-y-0">
               {upcomingExams.map((exam, i) => {
                 const examDate = new Date(exam.date + 'T00:00:00')
@@ -120,9 +120,9 @@ export default async function DashboardPage() {
                 const isTomorrow = daysLeft === 1
                 const dotColor = examTypeDot[exam.type] ?? 'bg-zinc-400'
                 return (
-                  <div key={i} className="relative flex items-start gap-4 pb-6 last:pb-0">
+                  <div key={i} className="relative flex items-start gap-3 sm:gap-4 pb-5 last:pb-0">
                     {/* Date column */}
-                    <div className="w-20 shrink-0 pt-0.5 text-right">
+                    <div className="w-14 sm:w-20 shrink-0 pt-0.5 text-right">
                       <p className="text-xs font-semibold text-zinc-900 leading-tight">
                         {examDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </p>
@@ -133,25 +133,24 @@ export default async function DashboardPage() {
 
                     {/* Dot on the line */}
                     <div className="relative z-10 mt-1 shrink-0">
-                      <div className={`h-3 w-3 rounded-full ring-2 ring-white ${isToday ? 'ring-offset-1 ring-offset-zinc-900 ' + dotColor : dotColor}`} />
+                      <div className={`h-3 w-3 rounded-full ring-2 ring-white ${dotColor}`} />
                     </div>
 
                     {/* Content */}
-                    <div className={`flex-1 rounded-lg border px-4 py-3 ${isToday ? 'border-zinc-200 bg-zinc-900 text-white' : 'border-zinc-100 bg-white'}`}>
+                    <div className={`flex-1 min-w-0 rounded-lg border px-3 py-2.5 sm:px-4 sm:py-3 ${isToday ? 'border-zinc-200 bg-zinc-900' : 'border-zinc-100 bg-white'}`}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-semibold leading-tight ${isToday ? 'text-white' : 'text-zinc-900'}`}>
+                        <p className={`text-sm font-semibold leading-tight break-words ${isToday ? 'text-white' : 'text-zinc-900'}`}>
                           {exam.subject}
                         </p>
                         <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'bg-white/20 text-white' : (examTypeBadge[exam.type] ?? 'bg-zinc-100 text-zinc-600')}`}>
                           {exam.type}
                         </span>
                       </div>
-                      <div className={`mt-1 flex items-center gap-2 text-xs ${isToday ? 'text-zinc-300' : 'text-zinc-400'}`}>
-                        <Clock size={10} />
-                        {exam.start}–{exam.end}
-                        {isToday && <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white">Today</span>}
-                        {isTomorrow && <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-500`}>Tomorrow</span>}
-                        {!isToday && !isTomorrow && <span className="ml-1 text-zinc-400">in {daysLeft}d</span>}
+                      <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs ${isToday ? 'text-zinc-300' : 'text-zinc-400'}`}>
+                        <span className="flex items-center gap-1"><Clock size={10} />{exam.start}–{exam.end}</span>
+                        {isToday && <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white">Today</span>}
+                        {isTomorrow && <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500">Tomorrow</span>}
+                        {!isToday && !isTomorrow && <span>in {daysLeft}d</span>}
                       </div>
                     </div>
                   </div>

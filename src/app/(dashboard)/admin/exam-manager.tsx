@@ -53,7 +53,7 @@ function ExamForm({
   const [form, setForm] = useState<ExamFormData>(initial)
 
   return (
-    <div className="grid grid-cols-2 gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
       <div className="col-span-2">
         <label className="text-xs font-medium text-zinc-500">Subject</label>
         <input
@@ -308,8 +308,8 @@ export function ExamManager({ initialExams }: { initialExams: Exam[] }) {
         {approved.length === 0 ? (
           <p className="text-sm text-zinc-400 py-2">No approved exams yet. Approve suggestions or add one manually.</p>
         ) : (
-          <div className="rounded-lg border border-zinc-100 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border border-zinc-100 overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
               <thead className="bg-zinc-50 text-zinc-500 text-xs uppercase tracking-wide">
                 <tr>
                   <th className="px-4 py-2.5 text-left font-medium">Subject</th>

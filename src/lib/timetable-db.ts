@@ -34,7 +34,7 @@ export function getDayScheduleFromData(
 }
 
 export async function getUpcomingExams(
-  section: 'A' | 'B',
+  _section: 'A' | 'B',
   count = 5
 ): Promise<Exam[]> {
   const supabase = await createClient()
@@ -45,7 +45,6 @@ export async function getUpcomingExams(
     .select('*')
     .eq('status', 'approved')
     .gte('date', todayStr)
-    .contains('sections', [section])
     .order('date', { ascending: true })
     .order('start', { ascending: true })
     .limit(count)

@@ -14,9 +14,9 @@ export default async function AccountPage() {
     .single()
 
   return (
-    <div className="p-8 max-w-xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-900">Profile</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900">Profile</h1>
         <p className="text-sm text-zinc-500 mt-0.5">{user.email}</p>
       </div>
 
