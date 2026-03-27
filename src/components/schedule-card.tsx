@@ -106,30 +106,36 @@ export function ScheduleCard({
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      disabled={isLoading}
-                      onClick={() => mark(s, 'present')}
-                      title="Mark present"
-                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
-                        status === 'present'
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-zinc-100 text-zinc-400 hover:bg-emerald-100 hover:text-emerald-600'
-                      }`}
-                    >
-                      <Check size={15} strokeWidth={2.5} />
-                    </button>
-                    <button
-                      disabled={isLoading}
-                      onClick={() => mark(s, 'absent')}
-                      title="Mark absent"
-                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
-                        status === 'absent'
-                          ? 'bg-red-500 text-white'
-                          : 'bg-zinc-100 text-zinc-400 hover:bg-red-100 hover:text-red-500'
-                      }`}
-                    >
-                      <X size={15} strokeWidth={2.5} />
-                    </button>
+                    {isLoading ? (
+                      <div className="flex h-8 w-8 items-center justify-center">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-500" />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => mark(s, 'present')}
+                          title="Mark present"
+                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                            status === 'present'
+                              ? 'bg-emerald-500 text-white scale-110'
+                              : 'bg-zinc-100 text-zinc-400 hover:bg-emerald-100 hover:text-emerald-600'
+                          }`}
+                        >
+                          <Check size={15} strokeWidth={2.5} />
+                        </button>
+                        <button
+                          onClick={() => mark(s, 'absent')}
+                          title="Mark absent"
+                          className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                            status === 'absent'
+                              ? 'bg-red-500 text-white scale-110'
+                              : 'bg-zinc-100 text-zinc-400 hover:bg-red-100 hover:text-red-500'
+                          }`}
+                        >
+                          <X size={15} strokeWidth={2.5} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </li>
               )
