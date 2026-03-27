@@ -68,20 +68,20 @@ export function ScheduleCard({
 
   return (
     <Card className="border-zinc-100 shadow-none">
-      <CardHeader className="pb-2 pt-4 px-4">
-        <CardTitle className="text-sm font-semibold text-zinc-700 flex items-center gap-1.5">
-          <CalendarDays size={14} className="text-zinc-400" />
+      <CardHeader className="pb-3 pt-5 px-5">
+        <CardTitle className="text-base font-semibold text-zinc-700 flex items-center gap-2">
+          <CalendarDays size={16} className="text-zinc-400" />
           {title}
-          <span className="font-normal text-zinc-400 text-xs ml-1">{formattedDate}</span>
+          <span className="font-normal text-zinc-400 text-sm ml-1">{formattedDate}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="px-5 pb-5">
         {isSunday ? (
-          <p className="text-sm text-zinc-400 py-2">Sunday — no classes</p>
+          <p className="text-base text-zinc-400 py-3">Sunday — no classes</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-zinc-400 py-2">No classes scheduled</p>
+          <p className="text-base text-zinc-400 py-3">No classes scheduled</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {sessions.map((s, i) => {
               const key = `${dateStr}|${s.subject}|${s.start}`
               const status = attendance[key]
@@ -89,46 +89,46 @@ export function ScheduleCard({
               const absences = absenceCounts[s.subject] ?? 0
 
               return (
-                <li key={i} className="flex items-center gap-2.5">
-                  <span className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${sessionTypeDot[s.type] ?? 'bg-zinc-400'}`} />
+                <li key={i} className="flex items-center gap-3">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${sessionTypeDot[s.type] ?? 'bg-zinc-400'}`} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-zinc-900 leading-tight truncate">{s.subject}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-base font-medium text-zinc-900 leading-tight truncate">{s.subject}</p>
                       {absences > 0 && (
-                        <span className="shrink-0 inline-flex items-center rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
+                        <span className="shrink-0 inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
                           {absences} absent
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
-                      <Clock size={10} />
+                    <p className="text-sm text-zinc-400 mt-0.5 flex items-center gap-1">
+                      <Clock size={12} />
                       {s.start}–{s.end}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       disabled={isLoading}
                       onClick={() => mark(s, 'present')}
                       title="Mark present"
-                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
+                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
                         status === 'present'
                           ? 'bg-emerald-500 text-white'
                           : 'bg-zinc-100 text-zinc-400 hover:bg-emerald-100 hover:text-emerald-600'
                       }`}
                     >
-                      <Check size={12} strokeWidth={2.5} />
+                      <Check size={15} strokeWidth={2.5} />
                     </button>
                     <button
                       disabled={isLoading}
                       onClick={() => mark(s, 'absent')}
                       title="Mark absent"
-                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
+                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
                         status === 'absent'
                           ? 'bg-red-500 text-white'
                           : 'bg-zinc-100 text-zinc-400 hover:bg-red-100 hover:text-red-500'
                       }`}
                     >
-                      <X size={12} strokeWidth={2.5} />
+                      <X size={15} strokeWidth={2.5} />
                     </button>
                   </div>
                 </li>
