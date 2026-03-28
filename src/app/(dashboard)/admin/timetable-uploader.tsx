@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import type { Term } from '@/data/timetable'
 
 type UploadState =
   | { status: 'idle' }
@@ -11,11 +12,13 @@ type UploadState =
   | { status: 'success'; days: number; warnings: string[] }
   | { status: 'error'; message: string }
 
-export function TimetableUploader() {
+export function TimetableUploader({ terms }: { terms: Term[] }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [state, setState] = useState<UploadState>({ status: 'idle' })
+  const activeTerm = terms.find(t => t.is_active)
+  const [selectedTermId, setSelectedTermId] = useState<string>(activeTerm?.id ?? '')
 
   function handleFile(f: File) {
     setFile(f)
@@ -39,6 +42,7 @@ export function TimetableUploader() {
 
     const form = new FormData()
     form.append('file', file)
+    if (selectedTermId) form.append('term_id', selectedTermId)
 
     try {
       const res = await fetch('/api/admin/upload-timetable', { method: 'POST', body: form })
@@ -60,6 +64,25 @@ export function TimetableUploader() {
       <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
         Upload Timetable
       </h2>
+
+      {/* Term selector */}
+      {terms.length > 0 && (
+        <div>
+          <label className="text-xs font-medium text-zinc-500">Term</label>
+          <select
+            className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            value={selectedTermId}
+            onChange={e => setSelectedTermId(e.target.value)}
+          >
+            <option value="">— No term —</option>
+            {terms.map(t => (
+              <option key={t.id} value={t.id}>
+                {t.name}{t.is_active ? ' (active)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Drop zone */}
       <div

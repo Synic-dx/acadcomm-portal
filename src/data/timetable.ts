@@ -1,5 +1,27 @@
 export type SessionType = 'lecture' | 'quiz' | 'midterm' | 'endterm' | 'activity' | 'event' | 'tutorial'
 
+export type Term = {
+  id: string
+  name: string
+  start_date: string   // "YYYY-MM-DD"
+  end_date: string     // "YYYY-MM-DD"
+  is_active: boolean
+  created_at?: string
+}
+
+export type Course = {
+  id: string
+  term_id: string
+  name: string
+  abbreviation: string  // matches subject string in timetable JSON
+  credits: number | null
+  total_classes: number | null
+  outline_link: string | null
+  notes_folder_link: string | null
+  color: string | null
+  created_at?: string
+}
+
 export type Session = {
   start: string   // "HH:MM"
   end: string     // "HH:MM"

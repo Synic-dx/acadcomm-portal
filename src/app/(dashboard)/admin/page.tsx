@@ -4,7 +4,10 @@ import { TimetableUploader } from './timetable-uploader'
 import { UserManager } from './user-manager'
 import { UserImporter } from './user-importer'
 import { ExamManager } from './exam-manager'
+import { TermManager } from './term-manager'
+import { CourseManager } from './course-manager'
 import type { Exam } from './exam-manager'
+import type { Term, Course } from '@/data/timetable'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -19,7 +22,7 @@ export default async function AdminPage() {
 
   if (profile?.role !== 'admin') redirect('/dashboard')
 
-  const [uploadsRes, usersRes, examsRes] = await Promise.all([
+  const [uploadsRes, usersRes, examsRes, termsRes] = await Promise.all([
     supabase
       .from('timetable_uploads')
       .select('id, filename, uploaded_at, is_active, timetable')
@@ -34,11 +37,22 @@ export default async function AdminPage() {
       .select('*')
       .order('date', { ascending: true })
       .order('start', { ascending: true }),
+    supabase
+      .from('terms')
+      .select('*')
+      .order('created_at', { ascending: false }),
   ])
 
   const uploads = uploadsRes.data
   const users   = usersRes.data ?? []
   const exams   = (examsRes.data ?? []) as Exam[]
+  const terms   = (termsRes.data ?? []) as Term[]
+  const activeTerm = terms.find(t => t.is_active) ?? null
+
+  const coursesRes = activeTerm
+    ? await supabase.from('courses').select('*').eq('term_id', activeTerm.id).order('name')
+    : { data: [] }
+  const courses = (coursesRes.data ?? []) as Course[]
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-10">
@@ -47,9 +61,19 @@ export default async function AdminPage() {
         <p className="text-sm text-zinc-500 mt-0.5">Manage timetable, exams, and user profiles.</p>
       </div>
 
+      {/* ── Terms ── */}
+      <TermManager initialTerms={terms} />
+
+      <div className="border-t border-zinc-100" />
+
+      {/* ── Courses ── */}
+      <CourseManager activeTerm={activeTerm} initialCourses={courses} />
+
+      <div className="border-t border-zinc-100" />
+
       {/* ── Timetable ── */}
       <div className="max-w-2xl space-y-6">
-        <TimetableUploader />
+        <TimetableUploader terms={terms} />
 
         {uploads && uploads.length > 0 && (
           <section>

@@ -28,6 +28,7 @@ const nav: NavItem[] = [
     label: 'Academics',
     icon: <GraduationCap size={16} />,
     children: [
+      { label: 'Courses', href: '/academics/courses' },
       { label: 'Grades', href: '/academics/grades' },
       { label: 'Course Materials', href: '/academics/materials' },
       { label: 'Attendance Tracker', href: '/academics/attendance' },

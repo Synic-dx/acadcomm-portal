@@ -10,42 +10,36 @@ async function requireAdmin() {
   return { supabase, error: null }
 }
 
-// GET — all exams (admin sees all statuses)
 export async function GET() {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
   const { data, error: dbErr } = await supabase!
-    .from('exams')
+    .from('terms')
     .select('*')
-    .order('date', { ascending: true })
-    .order('start', { ascending: true })
+    .order('created_at', { ascending: false })
 
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
   return NextResponse.json(data)
 }
 
-// POST — create a new exam
 export async function POST(request: NextRequest) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
-  const body = await request.json()
-  const { subject, type, date, start, end, sections, notes, status, source, course_id, term_id } = body
+  const { name, start_date, end_date, is_active } = await request.json()
+  if (!name || !start_date || !end_date) {
+    return NextResponse.json({ error: 'name, start_date, and end_date are required' }, { status: 400 })
+  }
 
-  if (!subject || !type || !date || !start || !end) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  // If activating this term, deactivate all others first
+  if (is_active) {
+    await supabase!.from('terms').update({ is_active: false }).eq('is_active', true)
   }
 
   const { data, error: dbErr } = await supabase!
-    .from('exams')
-    .insert({
-      subject, type, date, start, end,
-      sections: sections ?? ['A', 'B'],
-      notes, status: status ?? 'pending', source: source ?? 'manual',
-      course_id: course_id ?? null,
-      term_id: term_id ?? null,
-    })
+    .from('terms')
+    .insert({ name, start_date, end_date, is_active: is_active ?? false })
     .select()
     .single()
 

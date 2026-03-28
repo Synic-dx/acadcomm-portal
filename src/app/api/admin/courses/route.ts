@@ -10,42 +10,33 @@ async function requireAdmin() {
   return { supabase, error: null }
 }
 
-// GET — all exams (admin sees all statuses)
-export async function GET() {
+export async function GET(request: NextRequest) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
-  const { data, error: dbErr } = await supabase!
-    .from('exams')
-    .select('*')
-    .order('date', { ascending: true })
-    .order('start', { ascending: true })
+  const term_id = request.nextUrl.searchParams.get('term_id')
+  let query = supabase!.from('courses').select('*').order('name')
+  if (term_id) query = query.eq('term_id', term_id)
 
+  const { data, error: dbErr } = await query
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
   return NextResponse.json(data)
 }
 
-// POST — create a new exam
 export async function POST(request: NextRequest) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
   const body = await request.json()
-  const { subject, type, date, start, end, sections, notes, status, source, course_id, term_id } = body
+  const { term_id, name, abbreviation, credits, total_classes, outline_link, notes_folder_link, color } = body
 
-  if (!subject || !type || !date || !start || !end) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  if (!term_id || !name || !abbreviation) {
+    return NextResponse.json({ error: 'term_id, name, and abbreviation are required' }, { status: 400 })
   }
 
   const { data, error: dbErr } = await supabase!
-    .from('exams')
-    .insert({
-      subject, type, date, start, end,
-      sections: sections ?? ['A', 'B'],
-      notes, status: status ?? 'pending', source: source ?? 'manual',
-      course_id: course_id ?? null,
-      term_id: term_id ?? null,
-    })
+    .from('courses')
+    .insert({ term_id, name, abbreviation, credits, total_classes, outline_link, notes_folder_link, color })
     .select()
     .single()
 

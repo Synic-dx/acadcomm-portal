@@ -10,45 +10,36 @@ async function requireAdmin() {
   return { supabase, error: null }
 }
 
-// GET — all exams (admin sees all statuses)
-export async function GET() {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
+  const { id } = await params
+  const body = await request.json()
+
   const { data, error: dbErr } = await supabase!
-    .from('exams')
-    .select('*')
-    .order('date', { ascending: true })
-    .order('start', { ascending: true })
+    .from('courses')
+    .update(body)
+    .eq('id', id)
+    .select()
+    .single()
 
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
   return NextResponse.json(data)
 }
 
-// POST — create a new exam
-export async function POST(request: NextRequest) {
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { supabase, error } = await requireAdmin()
   if (error) return error
 
-  const body = await request.json()
-  const { subject, type, date, start, end, sections, notes, status, source, course_id, term_id } = body
-
-  if (!subject || !type || !date || !start || !end) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
-
-  const { data, error: dbErr } = await supabase!
-    .from('exams')
-    .insert({
-      subject, type, date, start, end,
-      sections: sections ?? ['A', 'B'],
-      notes, status: status ?? 'pending', source: source ?? 'manual',
-      course_id: course_id ?? null,
-      term_id: term_id ?? null,
-    })
-    .select()
-    .single()
-
+  const { id } = await params
+  const { error: dbErr } = await supabase!.from('courses').delete().eq('id', id)
   if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  return NextResponse.json({ ok: true })
 }

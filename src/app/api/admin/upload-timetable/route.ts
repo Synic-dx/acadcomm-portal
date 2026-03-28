@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
+  const termId = formData.get('term_id') as string | null
+
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (!['xls', 'xlsx'].includes(ext ?? '')) {
     return NextResponse.json({ error: 'Only .xls and .xlsx files are supported' }, { status: 400 })
@@ -34,15 +36,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not parse timetable from file', warnings }, { status: 422 })
   }
 
-  // Delete all previous uploads — each upload is a full replacement
-  await supabase
-    .from('timetable_uploads')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000')
+  // Deactivate previous uploads for this term (or all if no term specified)
+  const deactivateQuery = supabase.from('timetable_uploads').update({ is_active: false })
+  if (termId) {
+    await deactivateQuery.eq('term_id', termId)
+  } else {
+    await deactivateQuery.eq('is_active', true)
+  }
 
   const { error: insertError } = await supabase
     .from('timetable_uploads')
-    .insert({ uploaded_by: user.id, filename: file.name, timetable, is_active: true })
+    .insert({ uploaded_by: user.id, filename: file.name, timetable, is_active: true, term_id: termId ?? null })
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })

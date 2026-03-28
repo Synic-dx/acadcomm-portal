@@ -1,20 +1,52 @@
 import { createClient } from '@/lib/supabase/server'
 import { timetable as staticTimetable, exams as staticExams } from '@/data/timetable'
-import type { DaySchedule, Exam } from '@/data/timetable'
+import type { DaySchedule, Exam, Term, Course } from '@/data/timetable'
+
+export async function getActiveTerm(): Promise<Term | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('terms')
+    .select('*')
+    .eq('is_active', true)
+    .single()
+  return (data as Term) ?? null
+}
+
+export async function getCourses(termId?: string): Promise<Course[]> {
+  const supabase = await createClient()
+  let query = supabase.from('courses').select('*').order('name')
+  if (termId) query = query.eq('term_id', termId)
+  const { data } = await query
+  return (data ?? []) as Course[]
+}
 
 /**
- * Returns the active timetable from the DB upload, or falls back to the
- * static timetable.ts data if no upload exists yet.
+ * Returns the active timetable from the DB upload for the active term,
+ * or falls back to the static timetable.ts data if no upload exists yet.
  */
 export async function getActiveTimetable(): Promise<DaySchedule[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+
+  // Try to get the active term's active timetable first
+  const activeTerm = await getActiveTerm()
+  let query = supabase
     .from('timetable_uploads')
     .select('timetable')
     .eq('is_active', true)
     .order('uploaded_at', { ascending: false })
     .limit(1)
-    .single()
+
+  if (activeTerm) {
+    query = supabase
+      .from('timetable_uploads')
+      .select('timetable')
+      .eq('is_active', true)
+      .eq('term_id', activeTerm.id)
+      .order('uploaded_at', { ascending: false })
+      .limit(1)
+  }
+
+  const { data } = await query.single()
 
   if (data?.timetable && Array.isArray(data.timetable)) {
     return data.timetable as DaySchedule[]
