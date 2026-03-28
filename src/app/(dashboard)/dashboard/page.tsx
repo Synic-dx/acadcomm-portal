@@ -199,9 +199,13 @@ export default async function DashboardPage() {
 }
 
 function getGreeting() {
-  const h = new Date().getHours()
+  // Convert server UTC time to IST (UTC+5:30)
+  const istMs = Date.now() + 5.5 * 60 * 60 * 1000
+  const h = new Date(istMs).getUTCHours()
+  if (h < 5)  return 'night'
   if (h < 12) return 'morning'
   if (h < 17) return 'afternoon'
-  return 'evening'
+  if (h < 21) return 'evening'
+  return 'night'
 }
 

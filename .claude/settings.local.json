@@ -13,7 +13,8 @@
       "Bash(find /c/Users/shinj/OneDrive/Documents/Github/acadcomm-portal/src/app/api/admin/ -type f -name *.tsx -o -name *.ts)",
       "Bash(node -e \"require\\(''@ducanh2912/next-pwa''\\); console.log\\(''ok''\\)\")",
       "Bash(node -e \":*)",
-      "mcp__supabase__list_tables"
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_extensions"
     ]
   }
 }

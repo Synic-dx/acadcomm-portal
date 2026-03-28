@@ -1,8 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, CheckCircle } from 'lucide-react'
+import { Plus, CheckCircle, Archive } from 'lucide-react'
 import type { Term } from '@/data/timetable'
+
+const today = new Date().toISOString().slice(0, 10)
+
+type TermStatus = 'active' | 'over' | 'upcoming' | 'inactive'
+
+function getTermStatus(term: Term): TermStatus {
+  if (term.is_active) return 'active'
+  if (term.end_date < today) return 'over'
+  if (term.start_date > today) return 'upcoming'
+  return 'inactive'
+}
+
+const STATUS_BADGE: Record<TermStatus, string> = {
+  active:   'bg-emerald-100 text-emerald-700',
+  over:     'bg-zinc-100 text-zinc-400',
+  upcoming: 'bg-blue-50 text-blue-600',
+  inactive: 'bg-zinc-100 text-zinc-500',
+}
+
+const STATUS_LABEL: Record<TermStatus, string> = {
+  active:   'Active',
+  over:     'Over',
+  upcoming: 'Upcoming',
+  inactive: 'Inactive',
+}
 
 export function TermManager({ initialTerms }: { initialTerms: Term[] }) {
   const [terms, setTerms] = useState<Term[]>(initialTerms)
@@ -18,6 +43,20 @@ export function TermManager({ initialTerms }: { initialTerms: Term[] }) {
     })
     if (res.ok) {
       setTerms(prev => prev.map(t => ({ ...t, is_active: t.id === id })))
+    }
+  }
+
+  async function markOver(id: string) {
+    const res = await fetch(`/api/admin/terms/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      // Set end_date to yesterday and deactivate — term is definitively over
+      body: JSON.stringify({ is_active: false, end_date: today }),
+    })
+    if (res.ok) {
+      setTerms(prev => prev.map(t =>
+        t.id === id ? { ...t, is_active: false, end_date: today } : t
+      ))
     }
   }
 
@@ -101,7 +140,7 @@ export function TermManager({ initialTerms }: { initialTerms: Term[] }) {
         <p className="text-sm text-zinc-400 py-2">No terms yet. Create one to get started.</p>
       ) : (
         <div className="rounded-lg border border-zinc-100 overflow-x-auto">
-          <table className="w-full text-sm min-w-[400px]">
+          <table className="w-full text-sm min-w-[480px]">
             <thead className="bg-zinc-50 text-zinc-500 text-xs uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-2.5 text-left font-medium">Name</th>
@@ -111,35 +150,44 @@ export function TermManager({ initialTerms }: { initialTerms: Term[] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {terms.map(term => (
-                <tr key={term.id} className="bg-white">
-                  <td className="px-4 py-3 font-medium text-zinc-900">{term.name}</td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
-                    {term.start_date} → {term.end_date}
-                  </td>
-                  <td className="px-4 py-3">
-                    {term.is_active ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        <CheckCircle size={10} /> Active
+              {terms.map(term => {
+                const status = getTermStatus(term)
+                return (
+                  <tr key={term.id} className="bg-white">
+                    <td className="px-4 py-3 font-medium text-zinc-900">{term.name}</td>
+                    <td className="px-4 py-3 text-zinc-500 text-xs">
+                      {term.start_date} → {term.end_date}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}>
+                        {status === 'active' && <CheckCircle size={10} />}
+                        {STATUS_LABEL[status]}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {!term.is_active && (
-                      <button
-                        onClick={() => activate(term.id)}
-                        className="text-xs text-zinc-400 hover:text-zinc-900 underline transition-colors"
-                      >
-                        Set active
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {status === 'active' && (
+                          <button
+                            onClick={() => markOver(term.id)}
+                            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-500 transition-colors"
+                            title="Mark this term as over"
+                          >
+                            <Archive size={12} /> Mark Over
+                          </button>
+                        )}
+                        {(status === 'inactive' || status === 'upcoming') && (
+                          <button
+                            onClick={() => activate(term.id)}
+                            className="text-xs text-zinc-400 hover:text-zinc-900 underline transition-colors"
+                          >
+                            Set active
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
