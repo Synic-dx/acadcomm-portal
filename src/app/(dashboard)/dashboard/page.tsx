@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDate, toDateStr } from '@/data/timetable'
-import { getActiveTimetable, getDayScheduleFromData, getUpcomingExams } from '@/lib/timetable-db'
+import { getActiveTimetable, getDayScheduleFromData, getUpcomingExams, getActiveTerm, getCourses } from '@/lib/timetable-db'
 import { Card, CardContent } from '@/components/ui/card'
 import { Clock } from 'lucide-react'
 
@@ -48,8 +48,18 @@ export default async function DashboardPage() {
   const todayStr = toDateStr(today)
   const tomorrowStr = toDateStr(tomorrow)
 
-  const activeTimetable = await getActiveTimetable()
-  const upcomingExams = await getUpcomingExams(section, 10)
+  const [activeTimetable, upcomingExams, activeTerm] = await Promise.all([
+    getActiveTimetable(),
+    getUpcomingExams(section, 10),
+    getActiveTerm(),
+  ])
+
+  // Build subject abbreviation → course_id map for attendance linking
+  const courseIdMap: Record<string, string> = {}
+  if (activeTerm) {
+    const courses = await getCourses(activeTerm.id)
+    for (const c of courses) courseIdMap[c.abbreviation] = c.id
+  }
   const todayClasses = getDayScheduleFromData(activeTimetable, todayStr, section).filter(
     (s) => s.type !== 'activity'
   )
@@ -171,6 +181,7 @@ export default async function DashboardPage() {
           isSunday={isSunday(today)}
           initialAttendance={attendanceMap}
           absenceCounts={absenceCounts}
+          courseIdMap={courseIdMap}
         />
         <ScheduleCard
           title="Tomorrow"
@@ -180,6 +191,7 @@ export default async function DashboardPage() {
           isSunday={isSunday(tomorrow)}
           initialAttendance={attendanceMap}
           absenceCounts={absenceCounts}
+          courseIdMap={courseIdMap}
         />
       </div>
     </div>

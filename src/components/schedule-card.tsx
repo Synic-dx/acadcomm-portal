@@ -25,6 +25,7 @@ type Props = {
   isSunday: boolean
   initialAttendance: AttendanceMap
   absenceCounts: Record<string, number> // subject → total absences
+  courseIdMap?: Record<string, string>  // subject abbreviation → course_id
 }
 
 export function ScheduleCard({
@@ -35,6 +36,7 @@ export function ScheduleCard({
   isSunday,
   initialAttendance,
   absenceCounts: initialAbsenceCounts,
+  courseIdMap,
 }: Props) {
   const [attendance, setAttendance] = useState<AttendanceMap>(initialAttendance)
   const [absenceCounts, setAbsenceCounts] = useState(initialAbsenceCounts)
@@ -57,10 +59,17 @@ export function ScheduleCard({
       setAbsenceCounts(c => ({ ...c, [session.subject]: Math.max(0, (c[session.subject] ?? 1) - 1) }))
     }
 
+    const courseId = courseIdMap?.[session.subject]
     await fetch('/api/attendance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: dateStr, subject: session.subject, start: session.start, status }),
+      body: JSON.stringify({
+        date: dateStr,
+        subject: session.subject,
+        start: session.start,
+        status,
+        ...(courseId ? { course_id: courseId } : {}),
+      }),
     })
 
     setPending(p => { const n = new Set(p); n.delete(key); return n })
